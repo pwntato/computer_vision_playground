@@ -2,12 +2,15 @@
 
 import gymnasium as gym
 import pygame
+import torch
 import numpy as np
 
 human = True
 view_scale = 4
 
 height, width = 210, 160
+
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 pygame.init()
 screen = pygame.display.set_mode((width * view_scale, height * view_scale))
@@ -44,12 +47,16 @@ while running:
     observation, reward, terminated, truncated, info = env.step(action)
 
     if terminated or truncated:
-        observation, info = env.reset()
+        observation, info = env.reset()    
+
+    # covert observation to grey scale tensor
+    greyscale = torch.tensor(observation.mean(axis=-1), device=device, dtype=torch.float32)
 
     # show frame
+    observation = observation.swapaxes(0, 1)
     observation = np.repeat(observation, view_scale, axis=0)
     observation = np.repeat(observation, view_scale, axis=1)
-    surface = pygame.surfarray.make_surface(observation.swapaxes(0, 1))
+    surface = pygame.surfarray.make_surface(observation)
     screen.blit(surface, (0, 0))
     pygame.display.flip()
 
