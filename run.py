@@ -5,11 +5,12 @@ import pygame
 import numpy as np
 
 human = True
+view_scale = 4
 
 height, width = 210, 160
 
 pygame.init()
-screen = pygame.display.set_mode((width, height))
+screen = pygame.display.set_mode((width * view_scale, height * view_scale))
 
 env = gym.make("SpaceInvaders-v4", render_mode="rgb_array")
 observation, info = env.reset()
@@ -46,6 +47,8 @@ while running:
         observation, info = env.reset()
 
     # show frame
+    observation = np.repeat(observation, view_scale, axis=0)
+    observation = np.repeat(observation, view_scale, axis=1)
     surface = pygame.surfarray.make_surface(observation.swapaxes(0, 1))
     screen.blit(surface, (0, 0))
     pygame.display.flip()
