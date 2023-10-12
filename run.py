@@ -126,6 +126,9 @@ while running:
     text_surface = font.render(f"Tries: {tries}", True, (255, 255, 255))
     screen.blit(text_surface, dest=(text_offset, 150))
 
+    text_surface = font.render(f"Choose random: {int(choose_random * 100)}%", True, (255, 255, 255))
+    screen.blit(text_surface, dest=(text_offset, 200))
+
     recent_scores = recent_scores[-100:]
     if len(recent_scores) > 0:
       text_surface = font.render(
@@ -133,7 +136,7 @@ while running:
           True, 
           (255, 255, 255)
         )
-      screen.blit(text_surface, dest=(text_offset, 200))
+      screen.blit(text_surface, dest=(text_offset, 250))
 
     pygame.display.flip()
 
