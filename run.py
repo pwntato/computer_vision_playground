@@ -4,6 +4,7 @@ import gymnasium as gym
 import pygame
 import torch
 import torch.nn.functional as F
+import random
 import numpy as np
 
 from model import SpaceInvadersModel
@@ -13,7 +14,10 @@ human = False
 view_scale = 4
 
 learning_rate = 1e-4
-gamma = 0.99
+discount = 0.99
+choose_random = 1.0
+choose_random_min = 0.01
+choose_random_decay = 0.995
 
 height, width = 210, 160
 
@@ -52,10 +56,12 @@ while running:
         else:
             action = 0
     else:
-        # possibly use epsilon-greedy policy
-        with torch.no_grad():
-            q_values = model(state)
-            action = q_values_to_action(q_values)
+        if random.random() < choose_random:
+            action = env.action_space.sample()
+        else:
+            with torch.no_grad():
+                q_values = model(state)
+                action = q_values_to_action(q_values)
 
     # take action in environment
     observation, reward, terminated, truncated, info = env.step(action)
@@ -67,7 +73,7 @@ while running:
     if not human:
         # run through model
         next_q_values = model(next_state)
-        target_q_value = reward + gamma * next_q_values.max().item() * (not terminated)
+        target_q_value = reward + discount * next_q_values.max().item() * (not terminated)
         target_q_value = torch.tensor(target_q_value, device=device, dtype=torch.float32, requires_grad=True)
 
         q_values = model(state)
@@ -76,7 +82,7 @@ while running:
 
         loss = F.smooth_l1_loss(q_value, target_q_value)
 
-        print(f"loss: {loss}")
+        #print(f"loss: {loss}")
 
         optimizer.zero_grad()
         loss.backward()
@@ -89,6 +95,7 @@ while running:
         observation, info = env.reset()
         state = prep_observation_for_model(observation, device)
         score = 0
+        choose_random = max(choose_random_min, choose_random * choose_random_decay)
 
     # show frame
     observation = observation.swapaxes(0, 1)
