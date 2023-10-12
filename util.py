@@ -10,5 +10,5 @@ def prep_observation_for_model(observation, device):
     return result
 
 def q_values_to_action(q_values):
-    # return q_values.argmax().item()
-    return torch.distributions.Categorical(q_values).sample().item()
+    return q_values.argmax().item()
+    #return torch.distributions.Categorical(q_values).sample().item()
