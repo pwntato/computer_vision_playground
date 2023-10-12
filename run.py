@@ -78,7 +78,7 @@ while running:
 
         q_values = model(state)
         q_value = q_values[0, action]
-        q_value = torch.tensor(q_value, device=device, dtype=torch.float32, requires_grad=True)
+        q_value.requires_grad_(True)
 
         loss = F.smooth_l1_loss(q_value, target_q_value)
 
