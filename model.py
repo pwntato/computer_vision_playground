@@ -16,6 +16,7 @@ class SpaceInvadersModel(nn.Module):
 
     self.layers = nn.Sequential()
     for i in range(len(nfs) - 1):
+        # possibly replace with residual block
         self.layers.append(nn.Conv2d(nfs[i], nfs[i + 1], kernel_size=kernel_size, stride=stride, padding=padding, bias=True))
         if i < len(nfs) - 2: # last layer isn't 2D
             self.layers.append(norm(nfs[i + 1]))
