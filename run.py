@@ -27,7 +27,7 @@ model = SpaceInvadersModel().to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 pygame.init()
-screen = pygame.display.set_mode(((width * view_scale) + 600, height * view_scale))
+screen = pygame.display.set_mode(((width * view_scale) + 400, height * view_scale))
 font = pygame.font.Font(pygame.font.get_default_font(), 36)
 
 env = gym.make("SpaceInvaders-v4", render_mode="rgb_array")
@@ -104,23 +104,27 @@ while running:
         choose_random = max(choose_random_min, choose_random * choose_random_decay)
 
     # show frame
+    screen.fill((0,0,0))
+
     observation = observation.swapaxes(0, 1)
     observation = np.repeat(observation, view_scale, axis=0)
     observation = np.repeat(observation, view_scale, axis=1)
     surface = pygame.surfarray.make_surface(observation)
 
-    text_offset = (width) # * view_scale) + 50
+    screen.blit(surface, (0, 0))
 
-    text_surface = font.render(f"Score: {score}", True, (255, 255, 255))
-    surface.blit(text_surface, dest=(text_offset, 50))
+    text_offset = width * view_scale
+
+    text_surface = font.render(f"Score: {int(score)}", True, (255, 255, 255))
+    screen.blit(text_surface, dest=(text_offset, 50))
 
     if score > high_score:
       high_score = score
-    text_surface = font.render(f"High score: {high_score}", True, (255, 255, 255))
-    surface.blit(text_surface, dest=(text_offset, 100))
+    text_surface = font.render(f"High score: {int(high_score)}", True, (255, 255, 255))
+    screen.blit(text_surface, dest=(text_offset, 100))
 
     text_surface = font.render(f"Tries: {tries}", True, (255, 255, 255))
-    surface.blit(text_surface, dest=(text_offset, 150))
+    screen.blit(text_surface, dest=(text_offset, 150))
 
     recent_scores = recent_scores[-100:]
     if len(recent_scores) > 0:
@@ -129,9 +133,7 @@ while running:
           True, 
           (255, 255, 255)
         )
-      surface.blit(text_surface, dest=(text_offset, 200))
-
-    screen.blit(surface, (0, 0))
+      screen.blit(text_surface, dest=(text_offset, 200))
 
     pygame.display.flip()
 
