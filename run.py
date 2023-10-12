@@ -8,7 +8,7 @@ import numpy as np
 
 from model import SpaceInvadersModel
 
-human = True
+human = False
 view_scale = 4
 
 height, width = 210, 160
