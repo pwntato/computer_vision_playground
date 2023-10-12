@@ -7,12 +7,13 @@ import torch.nn.functional as F
 import numpy as np
 
 from model import SpaceInvadersModel
-from util import prep_observation_for_model
+from util import prep_observation_for_model, q_values_to_action
 
 human = False
 view_scale = 4
 
 learning_rate = 1e-4
+gamma = 0.99
 
 height, width = 210, 160
 
@@ -32,16 +33,6 @@ state = prep_observation_for_model(observation, device)
 score = 0
 running = True
 while running:
-    # take action in environment
-    observation, reward, terminated, truncated, info = env.step(action)
-    score += reward
-
-    if terminated or truncated:
-        action = 0
-        observation, info = env.reset()
-        state = prep_observation_for_model(observation, device)
-        score = 0
-
     if human:
         # slow down the game
         pygame.time.wait(10)
@@ -61,21 +52,43 @@ while running:
         else:
             action = 0
     else:
-        # covert observation to grey scale tensor
-        next_state = prep_observation_for_model(observation, device)
-
-        # don't update gradients until after the game is over
+        # possibly use epsilon-greedy policy
         with torch.no_grad():
-            # add batch dimension (need to stack a few frames together)
-            next_state = next_state.unsqueeze(0)
-            # add channel dimension
-            next_state = next_state.unsqueeze(0)
+            q_values = model(state)
+            action = q_values_to_action(q_values)
 
-            # run through model (either argmax or sample from distribution)
-            result = model(next_state)
-            #action = result.argmax().item()
-            action = torch.distributions.Categorical(result).sample().item()
-            #print(f"result: {result} action: {action} argmax: {result.argmax().item()}")
+    # take action in environment
+    observation, reward, terminated, truncated, info = env.step(action)
+    # need to stack a few frames together...
+    next_state = prep_observation_for_model(observation, device)
+    score += reward
+
+    # update model
+    if not human:
+        # run through model
+        next_q_values = model(next_state)
+        target_q_value = reward + gamma * next_q_values.max().item() * (not terminated)
+        target_q_value = torch.tensor(target_q_value, device=device, dtype=torch.float32, requires_grad=True)
+
+        q_values = model(state)
+        q_value = q_values[0, action]
+        q_value = torch.tensor(q_value, device=device, dtype=torch.float32, requires_grad=True)
+
+        loss = F.smooth_l1_loss(q_value, target_q_value)
+
+        print(f"loss: {loss}")
+
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+    state = next_state
+
+    if terminated or truncated:
+        action = 0
+        observation, info = env.reset()
+        state = prep_observation_for_model(observation, device)
+        score = 0
 
     # show frame
     observation = observation.swapaxes(0, 1)
