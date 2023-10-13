@@ -16,7 +16,7 @@ human = False
 view_scale = 4
 
 learning_rate = 1e-4
-frame_count = 3
+frame_count = 4
 discount = 0.99
 choose_random = 1.0
 choose_random_min = 0.01
@@ -26,7 +26,7 @@ height, width = 210, 160
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-model = SpaceInvadersModel().to(device)
+model = SpaceInvadersModel(frames=frame_count).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 pygame.init()

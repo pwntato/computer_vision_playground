@@ -3,10 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class SpaceInvadersModel(nn.Module):
-  def __init__(self, n_actions=6):
+  def __init__(self, n_actions=6, frames=3):
     super(SpaceInvadersModel, self).__init__()
 
-    nfs = (3, 8, 16, 32, 64, 128, 256, 512, 1024) # 210x160 -> 105x80 -> 53x40 -> 27x20 -> 14x10 -> 7x5 -> 4x3 -> 2x2 -> 1x1
+    nfs = (frames, 8, 16, 32, 64, 128, 256, 512, 1024) # 210x160 -> 105x80 -> 53x40 -> 27x20 -> 14x10 -> 7x5 -> 4x3 -> 2x2 -> 1x1
     hidden_layers = 2
     norm = nn.BatchNorm2d
     activate = nn.SiLU
