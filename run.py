@@ -6,6 +6,7 @@ import torch
 import torch.nn.functional as F
 import random
 import numpy as np
+from datetime import datetime
 
 from model import SpaceInvadersModel
 from util import prep_observation_for_model, q_values_to_action
@@ -39,6 +40,7 @@ score = 0
 high_score = 0
 recent_scores = []
 tries = 0
+start_time = datetime.now()
 running = True
 while running:
     if human:
@@ -95,15 +97,18 @@ while running:
     state = next_state
 
     if terminated or truncated:
+        recent_scores.append(score)
+        print(f"Try {tries}: score {score} high score {high_score} rolling average {int(sum(recent_scores) / len(recent_scores))}")
+
         tries += 1
         action = 0
+        start_time = datetime.now()
         observation, info = env.reset()
         state = prep_observation_for_model(observation, device)
-        recent_scores.append(score)
         score = 0
         choose_random = max(choose_random_min, choose_random * choose_random_decay)
 
-    # show frame
+    # render frame to screen
     screen.fill((0,0,0))
 
     observation = observation.swapaxes(0, 1)
@@ -118,16 +123,19 @@ while running:
     text_surface = font.render(f"Score: {int(score)}", True, (255, 255, 255))
     screen.blit(text_surface, dest=(text_offset, 50))
 
+    text_surface = font.render(f"Time: {datetime.now() - start_time}", True, (255, 255, 255))
+    screen.blit(text_surface, dest=(text_offset, 100))
+
     if score > high_score:
       high_score = score
     text_surface = font.render(f"High score: {int(high_score)}", True, (255, 255, 255))
-    screen.blit(text_surface, dest=(text_offset, 100))
-
-    text_surface = font.render(f"Tries: {tries}", True, (255, 255, 255))
     screen.blit(text_surface, dest=(text_offset, 150))
 
-    text_surface = font.render(f"Choose random: {int(choose_random * 100)}%", True, (255, 255, 255))
+    text_surface = font.render(f"Tries: {tries}", True, (255, 255, 255))
     screen.blit(text_surface, dest=(text_offset, 200))
+
+    text_surface = font.render(f"Choose random: {int(choose_random * 100)}%", True, (255, 255, 255))
+    screen.blit(text_surface, dest=(text_offset, 250))
 
     recent_scores = recent_scores[-100:]
     if len(recent_scores) > 0:
@@ -136,7 +144,7 @@ while running:
           True, 
           (255, 255, 255)
         )
-      screen.blit(text_surface, dest=(text_offset, 250))
+      screen.blit(text_surface, dest=(text_offset, 300))
 
     pygame.display.flip()
 
