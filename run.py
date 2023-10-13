@@ -7,14 +7,16 @@ import torch.nn.functional as F
 import random
 import numpy as np
 from datetime import datetime
+from collections import deque
 
 from model import SpaceInvadersModel
-from util import prep_observation_for_model, q_values_to_action
+from util import prep_observation_for_model, q_values_to_action, frames_to_tensor
 
 human = False
 view_scale = 4
 
 learning_rate = 1e-4
+frame_count = 3
 discount = 0.99
 choose_random = 1.0
 choose_random_min = 0.01
@@ -31,11 +33,17 @@ pygame.init()
 screen = pygame.display.set_mode(((width * view_scale) + 400, height * view_scale))
 font = pygame.font.Font(pygame.font.get_default_font(), 36)
 
+frames = deque(maxlen=frame_count)
+next_frames = deque(maxlen=frame_count)
+
 env = gym.make("SpaceInvaders-v4", render_mode="rgb_array")
 observation, info = env.reset()
 
 action = 0 # no action
 state = prep_observation_for_model(observation, device)
+for _ in range(frame_count):
+    frames.append(state)
+    next_frames.append(state)
 score = 0
 high_score = 0
 recent_scores = []
@@ -66,23 +74,25 @@ while running:
             action = env.action_space.sample()
         else:
             with torch.no_grad():
-                q_values = model(state)
+                q_values = model(frames_to_tensor(frames))
                 action = q_values_to_action(q_values)
 
     # take action in environment
     observation, reward, terminated, truncated, info = env.step(action)
     # need to stack a few frames together...
     next_state = prep_observation_for_model(observation, device)
+    next_frames.append(next_state)
     score += reward
 
     # update model
     if not human:
         # run through model
-        next_q_values = model(next_state)
+        next_q_values = model(frames_to_tensor(next_frames))
         target_q_value = reward + discount * next_q_values.max().item() * (not terminated)
         target_q_value = torch.tensor(target_q_value, device=device, dtype=torch.float32, requires_grad=True)
 
-        q_values = model(state)
+        q_values = model(frames_to_tensor(frames))
+        #print(f"q_values: {q_values}")
         q_value = q_values[0, action]
         q_value.requires_grad_(True)
 
@@ -95,6 +105,7 @@ while running:
         optimizer.step()
 
     state = next_state
+    frames = next_frames.copy()
 
     if terminated or truncated:
         recent_scores.append(score)
@@ -105,6 +116,9 @@ while running:
         start_time = datetime.now()
         observation, info = env.reset()
         state = prep_observation_for_model(observation, device)
+        for _ in range(frame_count):
+            frames.append(state)
+            next_frames.append(state)
         score = 0
         choose_random = max(choose_random_min, choose_random * choose_random_decay)
 
