@@ -20,7 +20,8 @@ frame_count = 4
 discount = 0.99
 choose_random = 1.0
 choose_random_min = 0.01
-choose_random_decay = 0.995
+choose_random_decay = 0.999
+skip_frames = 4
 
 height, width = 210, 160
 
@@ -48,6 +49,7 @@ score = 0
 high_score = 0
 recent_scores = []
 tries = 0
+frame_number = 0
 start_time = datetime.now()
 running = True
 while running:
@@ -70,12 +72,13 @@ while running:
         else:
             action = 0
     else:
-        if random.random() < choose_random:
-            action = env.action_space.sample()
-        else:
-            with torch.no_grad():
-                q_values = model(frames_to_tensor(frames))
-                action = q_values_to_action(q_values)
+        if frame_number % skip_frames == 0:
+            if random.random() < choose_random:
+                action = env.action_space.sample()
+            else:
+                with torch.no_grad():
+                    q_values = model(frames_to_tensor(frames))
+                    action = q_values_to_action(q_values)
 
     # take action in environment
     observation, reward, terminated, truncated, info = env.step(action)
@@ -107,11 +110,15 @@ while running:
     state = next_state
     frames = next_frames.copy()
 
+    frame_number += 1
+
     if terminated or truncated:
         recent_scores.append(score)
+        recent_scores = recent_scores[-100:] # keep last 100 scores
         print(f"Try {tries}: score {score} high score {high_score} rolling average {int(sum(recent_scores) / len(recent_scores))}")
 
         tries += 1
+        frame_number = 0
         action = 0
         start_time = datetime.now()
         observation, info = env.reset()
