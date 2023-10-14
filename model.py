@@ -35,5 +35,6 @@ class SpaceInvadersModel(nn.Module):
         #print(layer, x.shape)
         x = layer(x)
         #print(x.shape)
+    print(x)
     return x
   
