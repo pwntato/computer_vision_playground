@@ -3,6 +3,7 @@ import torch
 def prep_observation_for_model(observation, device):
     result = observation.mean(axis=-1)
     result = torch.tensor(result, device=device, dtype=torch.float32) / 255.0
+    #result = result - result.mean()
     return result
 
 def q_values_to_action(q_values):
