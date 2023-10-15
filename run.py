@@ -12,7 +12,6 @@ from collections import deque
 from model import SpaceInvadersModel
 from util import prep_observation_for_model, q_values_to_action, frames_to_tensor, random_stack_sample
 
-# Random batches of frame stacks
 # Pass action history to model
 
 human = False
