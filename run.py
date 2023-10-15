@@ -10,7 +10,7 @@ from datetime import datetime
 from collections import deque
 
 from model import SpaceInvadersModel
-from util import prep_observation_for_model, q_values_to_action, frames_to_tensor
+from util import prep_observation_for_model, q_values_to_action, frames_to_tensor, random_stack_sample
 
 # Random batches of frame stacks
 # Pass action history to model
@@ -25,6 +25,7 @@ choose_random = 1.0
 choose_random_min = 0.01
 choose_random_decay = 0.999
 skip_frames = 4
+batch_size = 32
 
 height, width = 210, 160
 
@@ -38,7 +39,7 @@ screen = pygame.display.set_mode(((width * view_scale) + 400, height * view_scal
 font = pygame.font.Font(pygame.font.get_default_font(), 36)
 
 frames = deque(maxlen=frame_count)
-next_frames = deque(maxlen=frame_count)
+frame_stack_history = []
 
 env = gym.make("SpaceInvaders-v4", render_mode="rgb_array")
 observation, info = env.reset()
@@ -47,7 +48,6 @@ action = 0 # no action
 state = prep_observation_for_model(observation, device)
 for _ in range(frame_count):
     frames.append(state)
-    next_frames.append(state)
 score = 0
 high_score = 0
 recent_scores = []
@@ -80,27 +80,39 @@ while running:
                 action = env.action_space.sample()
             else:
                 with torch.no_grad():
-                    q_values = model(frames_to_tensor(frames))
+                    q_values = model(frames_to_tensor(frames).unsqueeze(0).to(device))
                     action = q_values_to_action(q_values)
 
     # take action in environment
     observation, reward, terminated, truncated, info = env.step(action)
     # need to stack a few frames together...
     next_state = prep_observation_for_model(observation, device)
-    next_frames.append(next_state)
     score += reward
 
     # update model
     if not human:
-        # run through model
-        next_q_values = model(frames_to_tensor(next_frames))
-        target_q_value = reward + discount * next_q_values.max().item() * (not terminated)
-        target_q_value = torch.tensor(target_q_value, device=device, dtype=torch.float32, requires_grad=True)
+        random_frame_stack_sample = random_stack_sample(frame_stack_history, batch_size-1, device)
 
-        q_values = model(frames_to_tensor(frames))
+        frame_stack_history.append(frames_to_tensor(frames))
+        if len(random_frame_stack_sample) == 0:
+            state_stack_sample = frame_stack_history[-1].unsqueeze(0)
+        else:
+            state_stack_sample = torch.cat((random_frame_stack_sample, frame_stack_history[-1].unsqueeze(0)), dim=0)
+        q_values = model(state_stack_sample)
         #print(f"q_values: {q_values}")
         q_value = q_values[0, action]
         q_value.requires_grad_(True)
+
+        # run through model
+        frames.append(next_state)
+        frame_stack_history.append(frames_to_tensor(frames))
+        if len(random_frame_stack_sample) == 0:
+            next_state_stack_sample = frame_stack_history[-1].unsqueeze(0)
+        else:
+            next_state_stack_sample = torch.cat((random_frame_stack_sample, frame_stack_history[-1].unsqueeze(0)), dim=0)
+        next_q_values = model(next_state_stack_sample)
+        target_q_value = reward + discount * next_q_values.max().item() * (not terminated)
+        target_q_value = torch.tensor(target_q_value, device=device, dtype=torch.float32, requires_grad=True)
 
         loss = F.smooth_l1_loss(q_value, target_q_value)
 
@@ -111,9 +123,9 @@ while running:
         optimizer.step()
 
     state = next_state
-    frames = next_frames.copy()
 
     frame_number += 1
+    frame_stack_history = frame_stack_history[-500:] # keep last 500 frame stacks
 
     if terminated or truncated:
         recent_scores.append(score)
@@ -128,7 +140,6 @@ while running:
         state = prep_observation_for_model(observation, device)
         for _ in range(frame_count):
             frames.append(state)
-            next_frames.append(state)
         score = 0
         choose_random = max(choose_random_min, choose_random * choose_random_decay)
 

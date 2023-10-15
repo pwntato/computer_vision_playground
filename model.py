@@ -39,14 +39,16 @@ class SpaceInvadersModel(nn.Module):
     for i in range(hidden_layers):
         self.layers.append(activate())
         self.layers.append(nn.Linear(nfs[-1], nfs[-1]))
+    self.layers.append(nn.LayerNorm(nfs[-1]))
     self.layers.append(nn.Linear(nfs[-1], n_actions))
     self.layers.append(nn.Softmax(dim=1))
 
   def forward(self, x):
+    #print(x.shape)
     for layer in self.layers:
         #print(layer, x.shape)
         x = layer(x)
         #print(x)
-    #print(x)
+    print(x[-1])
     return x
   
