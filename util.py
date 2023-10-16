@@ -18,7 +18,7 @@ def frames_to_tensor(frames):
 def random_stack_sample(frame_stack_history, batch_size, device):
     result = []
     for _ in range(min(batch_size, len(frame_stack_history))):
-        result.append(random.choice(frame_stack_history[:-1]))
+        result.append(random.choice(frame_stack_history))
     if len(result) > 0:
-        result = torch.stack(result).to(device)
+        result = torch.cat(result, dim=0)
     return result

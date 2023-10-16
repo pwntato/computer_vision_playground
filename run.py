@@ -90,27 +90,44 @@ while running:
 
     # update model
     if not human:
-        random_frame_stack_sample = random_stack_sample(frame_stack_history, batch_size-1, device)
+        # need to have random sample and compare to random sample next
+        random_frame_stack_sample = []#random_stack_sample(frame_stack_history, batch_size-1, device)
 
-        frame_stack_history.append(frames_to_tensor(frames))
+        state_stack = frames_to_tensor(frames).clone().unsqueeze(0)
+        frames.append(next_state)
+        next_state_stack = frames_to_tensor(frames).clone().unsqueeze(0)
+        reward = torch.tensor(reward, device=device, dtype=torch.float32, requires_grad=True)
+        frame_stack_history.append((state_stack, next_state_stack, reward))
+
+        state_stack_sample = None
         if len(random_frame_stack_sample) == 0:
-            state_stack_sample = frame_stack_history[-1].unsqueeze(0)
+            state_stack_sample = state_stack
         else:
-            state_stack_sample = torch.cat((random_frame_stack_sample, frame_stack_history[-1].unsqueeze(0)), dim=0)
+            state_stack_sample = random_frame_stack_sample[: 0]
+            state_stack_sample.append(state_stack)
+            state_stack_sample = torch.cat(state_stack_sample, dim=0)
         q_values = model(state_stack_sample)
         #print(f"q_values: {q_values}")
         q_value = q_values[0, action]
         q_value.requires_grad_(True)
 
         # run through model
-        frames.append(next_state)
-        frame_stack_history.append(frames_to_tensor(frames))
+        next_state_stack_sample = None
         if len(random_frame_stack_sample) == 0:
-            next_state_stack_sample = frame_stack_history[-1].unsqueeze(0)
+            next_state_stack_sample = next_state_stack
         else:
-            next_state_stack_sample = torch.cat((random_frame_stack_sample, frame_stack_history[-1].unsqueeze(0)), dim=0)
+            next_state_stack_sample = random_frame_stack_sample[: 1]
+            next_state_stack_sample.append(next_state_stack)
+            next_state_stack_sample = torch.cat(next_state_stack_sample, dim=0)
         next_q_values = model(next_state_stack_sample)
-        target_q_value = reward + discount * next_q_values.max().item() * (not terminated)
+
+        reward_stack_sample = None
+        if len(random_frame_stack_sample) == 0:
+            reward_stack_sample = reward
+        else:
+            reward_stack_sample = torch.cat((random_frame_stack_sample[: 2], reward), dim=0)
+
+        target_q_value = reward_stack_sample + discount * next_q_values.max().item() * (not terminated)
         target_q_value = torch.tensor(target_q_value, device=device, dtype=torch.float32, requires_grad=True)
 
         loss = F.smooth_l1_loss(q_value, target_q_value)
