@@ -25,6 +25,7 @@ choose_random_min = 0.01
 choose_random_decay = 0.999
 skip_frames = 4
 batch_size = 32
+keep_frame_stack_history = 1000
 
 height, width = 210, 160
 
@@ -38,7 +39,11 @@ screen = pygame.display.set_mode(((width * view_scale) + 400, height * view_scal
 font = pygame.font.Font(pygame.font.get_default_font(), 36)
 
 frames = deque(maxlen=frame_count)
-frame_stack_history = []
+frame_stack_history = {
+    "state": deque(maxlen=keep_frame_stack_history),
+    "next_state": deque(maxlen=keep_frame_stack_history),
+    "reward": deque(maxlen=keep_frame_stack_history),
+}
 
 env = gym.make("SpaceInvaders-v4", render_mode="rgb_array")
 observation, info = env.reset()
@@ -91,44 +96,49 @@ while running:
     # update model
     if not human:
         # need to have random sample and compare to random sample next
-        random_frame_stack_sample = []#random_stack_sample(frame_stack_history, batch_size-1, device)
+        random_state_sample, random_next_state_sample, random_reward_sample = random_stack_sample(frame_stack_history, batch_size-1, device)
 
-        state_stack = frames_to_tensor(frames).clone().unsqueeze(0)
+        state_stack = frames_to_tensor(frames).clone().unsqueeze(0).to(device)
+        frame_stack_history["state"].append(state_stack)
         frames.append(next_state)
-        next_state_stack = frames_to_tensor(frames).clone().unsqueeze(0)
-        reward = torch.tensor(reward, device=device, dtype=torch.float32, requires_grad=True)
-        frame_stack_history.append((state_stack, next_state_stack, reward))
+        next_state_stack = frames_to_tensor(frames).clone().unsqueeze(0).to(device)
+        frame_stack_history["next_state"].append(next_state_stack)
+        reward = torch.tensor(reward, device=device, dtype=torch.float32, requires_grad=True).unsqueeze(0).to(device)
+        frame_stack_history["reward"].append(reward)
 
         state_stack_sample = None
-        if len(random_frame_stack_sample) == 0:
+        if len(random_state_sample) == 0:
             state_stack_sample = state_stack
         else:
-            state_stack_sample = random_frame_stack_sample[: 0]
-            state_stack_sample.append(state_stack)
-            state_stack_sample = torch.cat(state_stack_sample, dim=0)
+            state_stack_sample = random_state_sample
+            state_stack_sample = torch.cat((state_stack_sample, state_stack), dim=0)
         q_values = model(state_stack_sample)
-        #print(f"q_values: {q_values}")
-        q_value = q_values[0, action]
+        q_value = q_values[:, action]
         q_value.requires_grad_(True)
+        #print(f"q_value: {q_value.shape}")
 
         # run through model
         next_state_stack_sample = None
-        if len(random_frame_stack_sample) == 0:
+        if len(random_next_state_sample) == 0:
             next_state_stack_sample = next_state_stack
         else:
-            next_state_stack_sample = random_frame_stack_sample[: 1]
-            next_state_stack_sample.append(next_state_stack)
-            next_state_stack_sample = torch.cat(next_state_stack_sample, dim=0)
+            next_state_stack_sample = random_next_state_sample
+            next_state_stack_sample = torch.cat((next_state_stack_sample, next_state_stack), dim=0)
         next_q_values = model(next_state_stack_sample)
 
         reward_stack_sample = None
-        if len(random_frame_stack_sample) == 0:
+        if len(random_reward_sample) == 0:
             reward_stack_sample = reward
         else:
-            reward_stack_sample = torch.cat((random_frame_stack_sample[: 2], reward), dim=0)
+            reward_stack_sample = random_reward_sample
+            reward_stack_sample = torch.cat((reward_stack_sample, reward.unsqueeze(0)), dim=0)
 
         target_q_value = reward_stack_sample + discount * next_q_values.max().item() * (not terminated)
-        target_q_value = torch.tensor(target_q_value, device=device, dtype=torch.float32, requires_grad=True)
+        if len(target_q_value.shape) > 1:
+            target_q_value = target_q_value.squeeze(-1)
+        target_q_value.requires_grad_(True)
+
+        #print(f"q_value: {q_value.shape} target_q_value: {target_q_value.shape}")
 
         loss = F.smooth_l1_loss(q_value, target_q_value)
 
@@ -141,7 +151,6 @@ while running:
     state = next_state
 
     frame_number += 1
-    frame_stack_history = frame_stack_history[-500:] # keep last 500 frame stacks
 
     if terminated or truncated:
         recent_scores.append(score)

@@ -16,9 +16,17 @@ def frames_to_tensor(frames):
     return result
 
 def random_stack_sample(frame_stack_history, batch_size, device):
-    result = []
-    for _ in range(min(batch_size, len(frame_stack_history))):
-        result.append(random.choice(frame_stack_history))
-    if len(result) > 0:
-        result = torch.cat(result, dim=0)
-    return result
+    state = []
+    next_state = []
+    reward = []
+    for _ in range(min(batch_size, len(frame_stack_history["state"]))):
+        index = random.randint(0, len(frame_stack_history["state"])-1)
+        state.append(frame_stack_history["state"][index])
+        next_state.append(frame_stack_history["next_state"][index])
+        reward.append(frame_stack_history["reward"][index].unsqueeze(0))
+    if len(state) > 0:
+        state = torch.cat(state, dim=0).to(device)
+        next_state = torch.cat(next_state, dim=0).to(device)
+        reward = torch.cat(reward, dim=0).to(device)
+    #print(f"state: {state} next_state: {next_state} reward: {reward}")
+    return (state, next_state, reward)
