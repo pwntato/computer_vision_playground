@@ -21,10 +21,10 @@ learning_rate = 1e-4
 frame_count = 4
 discount = 0.99
 choose_random = 1.0
-choose_random_min = 0.0#1
+choose_random_min = 0.0
 choose_random_decay = 0.995#0.999
 skip_frames = 4
-batch_size = 64
+batch_size = 100
 keep_frame_stack_history = 1000
 
 height, width = 210, 160
