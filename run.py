@@ -21,10 +21,10 @@ learning_rate = 1e-4
 frame_count = 4
 discount = 0.99
 choose_random = 1.0
-choose_random_min = 0.01
-choose_random_decay = 0.999
+choose_random_min = 0.0#1
+choose_random_decay = 0.995#0.999
 skip_frames = 4
-batch_size = 32
+batch_size = 64
 keep_frame_stack_history = 1000
 
 height, width = 210, 160
@@ -58,6 +58,7 @@ recent_scores = []
 tries = 0
 frame_number = 0
 start_time = datetime.now()
+frame_skip_reward = 0
 running = True
 while running:
     if human:
@@ -80,6 +81,8 @@ while running:
             action = 0
     else:
         if frame_number % skip_frames == 0:
+            frame_skip_reward = 0
+
             if random.random() < choose_random:
                 action = env.action_space.sample()
             else:
@@ -92,9 +95,10 @@ while running:
     # need to stack a few frames together...
     next_state = prep_observation_for_model(observation, device)
     score += reward
+    frame_skip_reward += reward
 
     # update model
-    if not human:
+    if not human and (frame_number % skip_frames == 0 or terminated or truncated):
         # need to have random sample and compare to random sample next
         random_state_sample, random_next_state_sample, random_reward_sample = random_stack_sample(frame_stack_history, batch_size-1, device)
 
