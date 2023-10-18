@@ -11,6 +11,7 @@ from collections import deque
 
 from model import SpaceInvadersModel
 from util import prep_observation_for_model, q_values_to_action, frames_to_tensor, random_stack_sample, get_sample_stack
+from game_util import get_human_action
 
 # Pass action history to model
 
@@ -64,21 +65,8 @@ while running:
     if human:
         # slow down the game
         pygame.time.wait(10)
-
         # handle keyboard input
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_SPACE] and keys[pygame.K_LEFT]:
-            action = 5
-        elif keys[pygame.K_SPACE] and keys[pygame.K_RIGHT]:
-            action = 4
-        elif keys[pygame.K_LEFT]:
-            action = 3
-        elif keys[pygame.K_RIGHT]:
-            action = 2
-        elif keys[pygame.K_SPACE]:
-            action = 1
-        else:
-            action = 0
+        action = get_human_action(pygame.key.get_pressed())
     else:
         if frame_number % skip_frames == 0:
             frame_skip_reward = 0
