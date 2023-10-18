@@ -10,7 +10,7 @@ from datetime import datetime
 from collections import deque
 
 from model import SpaceInvadersModel
-from util import prep_observation_for_model, q_values_to_action, frames_to_tensor, random_stack_sample
+from util import prep_observation_for_model, q_values_to_action, frames_to_tensor, random_stack_sample, get_sample_stack
 
 # Pass action history to model
 
@@ -24,7 +24,7 @@ choose_random = 1.0
 choose_random_min = 0.0
 choose_random_decay = 0.995#0.999
 skip_frames = 4
-batch_size = 100
+batch_size = 64
 keep_frame_stack_history = 1000
 
 height, width = 210, 160
@@ -110,33 +110,17 @@ while running:
         reward = torch.tensor(reward, device=device, dtype=torch.float32, requires_grad=True).unsqueeze(0).to(device)
         frame_stack_history["reward"].append(reward)
 
-        state_stack_sample = None
-        if len(random_state_sample) == 0:
-            state_stack_sample = state_stack
-        else:
-            state_stack_sample = random_state_sample
-            state_stack_sample = torch.cat((state_stack_sample, state_stack), dim=0)
+        state_stack_sample = get_sample_stack(random_state_sample, state_stack)
         q_values = model(state_stack_sample)
         q_value = q_values[:, action]
         q_value.requires_grad_(True)
         #print(f"q_value: {q_value.shape}")
 
         # run through model
-        next_state_stack_sample = None
-        if len(random_next_state_sample) == 0:
-            next_state_stack_sample = next_state_stack
-        else:
-            next_state_stack_sample = random_next_state_sample
-            next_state_stack_sample = torch.cat((next_state_stack_sample, next_state_stack), dim=0)
+        next_state_stack_sample = get_sample_stack(random_next_state_sample, next_state_stack)
         next_q_values = model(next_state_stack_sample)
 
-        reward_stack_sample = None
-        if len(random_reward_sample) == 0:
-            reward_stack_sample = reward
-        else:
-            reward_stack_sample = random_reward_sample
-            reward_stack_sample = torch.cat((reward_stack_sample, reward.unsqueeze(0)), dim=0)
-
+        reward_stack_sample = get_sample_stack(random_reward_sample, reward.unsqueeze(0))
         target_q_value = reward_stack_sample + discount * next_q_values.max().item() * (not terminated)
         if len(target_q_value.shape) > 1:
             target_q_value = target_q_value.squeeze(-1)

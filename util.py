@@ -30,3 +30,13 @@ def random_stack_sample(frame_stack_history, batch_size, device):
         reward = torch.cat(reward, dim=0).to(device)
     #print(f"state: {state} next_state: {next_state} reward: {reward}")
     return (state, next_state, reward)
+
+def get_sample_stack(random_sample, current_value):
+    stack_sample = None
+    if len(random_sample) == 0:
+        stack_sample = current_value
+    else:
+        stack_sample = random_sample
+        stack_sample = torch.cat((stack_sample, current_value), dim=0)
+    return stack_sample
+    
