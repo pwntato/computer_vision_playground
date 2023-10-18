@@ -16,7 +16,6 @@ class ResidualBlock(nn.Module):
     def forward(self, x):
         return self.layers(x) + self.identity(x)
 
-
 class SpaceInvadersModel(nn.Module):
   def __init__(self, n_actions=6, frames=3):
     super(SpaceInvadersModel, self).__init__()

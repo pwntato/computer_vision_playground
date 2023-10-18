@@ -19,14 +19,14 @@ human = False
 view_scale = 4
 
 learning_rate = 1e-4
-frame_count = 4
+frame_count = 4 # number of frames to stack so the model can perceive movement
 discount = 0.99
-choose_random = 1.0
+choose_random = 1.0 # epsilon
 choose_random_min = 0.0
-choose_random_decay = 0.995#0.999
+choose_random_decay = 0.995 #0.999
 skip_frames = 4
 batch_size = 64
-keep_frame_stack_history = 1000
+keep_frame_stack_history = 1000 # number of frame stacks to keep in history for random sampling
 
 height, width = 210, 160
 
@@ -68,6 +68,7 @@ while running:
         # handle keyboard input
         action = get_human_action(pygame.key.get_pressed())
     else:
+        # only take action every N frames
         if frame_number % skip_frames == 0:
             frame_skip_reward = 0
 
@@ -80,7 +81,6 @@ while running:
 
     # take action in environment
     observation, reward, terminated, truncated, info = env.step(action)
-    # need to stack a few frames together...
     next_state = prep_observation_for_model(observation, device)
     score += reward
     frame_skip_reward += reward
@@ -107,14 +107,11 @@ while running:
         # run through model
         next_state_stack_sample = get_sample_stack(random_next_state_sample, next_state_stack)
         next_q_values = model(next_state_stack_sample)
-
         reward_stack_sample = get_sample_stack(random_reward_sample, reward.unsqueeze(0))
         target_q_value = reward_stack_sample + discount * next_q_values.max().item() * (not terminated)
         if len(target_q_value.shape) > 1:
             target_q_value = target_q_value.squeeze(-1)
         target_q_value.requires_grad_(True)
-
-        #print(f"q_value: {q_value.shape} target_q_value: {target_q_value.shape}")
 
         loss = F.smooth_l1_loss(q_value, target_q_value)
 
@@ -129,6 +126,7 @@ while running:
     frame_number += 1
 
     if terminated or truncated:
+        # Game over, reset tracking variables
         recent_scores.append(score)
         recent_scores = recent_scores[-100:] # keep last 100 scores
         print(f"Try {tries}: score {score} high score {high_score} rolling average {int(sum(recent_scores) / len(recent_scores))}")

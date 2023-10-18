@@ -28,7 +28,6 @@ def random_stack_sample(frame_stack_history, batch_size, device):
         state = torch.cat(state, dim=0).to(device)
         next_state = torch.cat(next_state, dim=0).to(device)
         reward = torch.cat(reward, dim=0).to(device)
-    #print(f"state: {state} next_state: {next_state} reward: {reward}")
     return (state, next_state, reward)
 
 def get_sample_stack(random_sample, current_value):
