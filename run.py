@@ -83,8 +83,6 @@ while running:
     observation, reward, terminated, truncated, info = env.step(action)
     next_state = prep_observation_for_model(observation, device)
     score += reward
-    #elapsed_time = datetime.now() - start_time
-    #reward = reward + elapsed_time.total_seconds() * 0.1
     frame_skip_reward += reward
 
     # update model
