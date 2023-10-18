@@ -35,8 +35,6 @@ def render_frame(view_scale, choose_random, width, screen, font, observation, sc
     text_surface = font.render(f"Time: {datetime.now() - start_time}", True, (255, 255, 255))
     screen.blit(text_surface, dest=(text_offset, 100))
 
-    if score > high_score:
-      high_score = score
     text_surface = font.render(f"High score: {int(high_score)}", True, (255, 255, 255))
     screen.blit(text_surface, dest=(text_offset, 150))
 

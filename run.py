@@ -83,6 +83,8 @@ while running:
     observation, reward, terminated, truncated, info = env.step(action)
     next_state = prep_observation_for_model(observation, device)
     score += reward
+    #elapsed_time = datetime.now() - start_time
+    #reward = reward + elapsed_time.total_seconds() * 0.1
     frame_skip_reward += reward
 
     # update model
@@ -122,11 +124,13 @@ while running:
         optimizer.step()
 
     state = next_state
-
     frame_number += 1
 
     if terminated or truncated:
         # Game over, reset tracking variables
+        if score > high_score:
+            high_score = score
+    
         recent_scores.append(score)
         recent_scores = recent_scores[-100:] # keep last 100 scores
         print(f"Try {tries}: score {score} high score {high_score} rolling average {int(sum(recent_scores) / len(recent_scores))}")
