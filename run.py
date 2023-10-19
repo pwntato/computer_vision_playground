@@ -23,17 +23,20 @@ frame_count = 4 # number of frames to stack so the model can perceive movement
 discount = 0.99
 choose_random = 1.0 # epsilon
 choose_random_min = 0.0
-choose_random_decay = 0.995 #0.999
-skip_frames = 4
-batch_size = 64
+choose_random_decay = 0.999
+skip_frames = 1 # number of frames to skip between actions, 1 means every frame
+batch_size = 100
 keep_frame_stack_history = 1000 # number of frame stacks to keep in history for random sampling
 
 height, width = 210, 160
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-model = SpaceInvadersModel(frames=frame_count).to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+#env = gym.make("SpaceInvaders-v4", render_mode="rgb_array")
+env = gym.make("ALE/Centipede-v5", render_mode="rgb_array")
+
+model = SpaceInvadersModel(n_actions=env.action_space.n, frames=frame_count).to(device)
+optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
 
 pygame.init()
 screen = pygame.display.set_mode(((width * view_scale) + 400, height * view_scale))
@@ -46,7 +49,6 @@ frame_stack_history = {
     "reward": deque(maxlen=keep_frame_stack_history),
 }
 
-env = gym.make("SpaceInvaders-v4", render_mode="rgb_array")
 observation, info = env.reset()
 
 action = 0 # no action
