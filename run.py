@@ -22,8 +22,10 @@ choose_random = 1.0 # epsilon
 choose_random_min = 0.0
 choose_random_decay = 0.995
 skip_frames = 1 # number of frames to skip between actions, 1 means every frame
-batch_size = 1 #100
+batch_size = 50 # number of samples to take from history for training
 keep_frame_stack_history = 1000 # number of frame stacks to keep in history for random sampling
+
+loss_function = F.smooth_l1_loss
 
 height, width = 210, 160
 
@@ -100,13 +102,14 @@ while running:
         # run through model
         next_state_stack_sample = get_sample_stack(random_next_state_sample, next_state_stack)
         next_q_values = model(next_state_stack_sample)
-        reward_stack_sample = get_sample_stack(random_reward_sample, reward.unsqueeze(0))
-        target_q_value = reward_stack_sample + discount * next_q_values.max().item() * (not terminated)
+        reward_stack_sample = get_sample_stack(random_reward_sample, reward.unsqueeze(0)).flatten()
+        next_q_values = next_q_values.max(dim=1)[0]
+        target_q_value = reward_stack_sample + discount * next_q_values * (not terminated)
         if len(target_q_value.shape) > 1:
             target_q_value = target_q_value.squeeze(-1)
         target_q_value.requires_grad_(True)
 
-        loss = F.smooth_l1_loss(q_value, target_q_value)
+        loss = loss_function(q_value, target_q_value)
         #print(f"q_value: {q_value} target_q_value: {target_q_value} loss: {loss}")
 
         optimizer.zero_grad()
