@@ -2,21 +2,6 @@ import pygame
 import numpy as np
 from datetime import datetime
 
-def get_human_action(keys):
-    if keys[pygame.K_SPACE] and keys[pygame.K_LEFT]:
-        action = 5
-    elif keys[pygame.K_SPACE] and keys[pygame.K_RIGHT]:
-        action = 4
-    elif keys[pygame.K_LEFT]:
-        action = 3
-    elif keys[pygame.K_RIGHT]:
-        action = 2
-    elif keys[pygame.K_SPACE]:
-        action = 1
-    else:
-        action = 0
-    return action
-
 def render_frame(view_scale, choose_random, width, screen, font, observation, score, high_score, recent_scores, tries, start_time):
     screen.fill((0,0,0))
 

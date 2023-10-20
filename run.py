@@ -11,11 +11,8 @@ from collections import deque
 
 from model import SpaceInvadersModel
 from util import prep_observation_for_model, q_values_to_action, frames_to_tensor, random_stack_sample, get_sample_stack
-from game_util import get_human_action, render_frame
+from game_util import render_frame
 
-# Pass action history to model
-
-human = False
 view_scale = 4
 
 learning_rate = 1e-4
@@ -32,8 +29,6 @@ height, width = 210, 160
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-#env = gym.make("SpaceInvaders-v4", render_mode="rgb_array")
-#env = gym.make("ALE/Centipede-v5", render_mode="rgb_array")
 env = gym.make("ALE/BeamRider-v5", render_mode="rgb_array")
 
 model = SpaceInvadersModel(n_actions=env.action_space.n, frames=frame_count).to(device)
@@ -65,22 +60,16 @@ start_time = datetime.now()
 frame_skip_reward = 0
 running = True
 while running:
-    if human:
-        # slow down the game
-        pygame.time.wait(10)
-        # handle keyboard input
-        action = get_human_action(pygame.key.get_pressed())
-    else:
-        # only take action every N frames
-        if frame_number % skip_frames == 0:
-            frame_skip_reward = 0
+    # only take action every N frames
+    if frame_number % skip_frames == 0:
+        frame_skip_reward = 0
 
-            if random.random() < choose_random:
-                action = env.action_space.sample()
-            else:
-                with torch.no_grad():
-                    q_values = model(frames_to_tensor(frames).unsqueeze(0).to(device))
-                    action = q_values_to_action(q_values)
+        if random.random() < choose_random:
+            action = env.action_space.sample()
+        else:
+            with torch.no_grad():
+                q_values = model(frames_to_tensor(frames).unsqueeze(0).to(device))
+                action = q_values_to_action(q_values)
 
     # take action in environment
     observation, reward, terminated, truncated, info = env.step(action)
@@ -90,7 +79,7 @@ while running:
     reward = frame_skip_reward
 
     # update model
-    if not human and (frame_number % skip_frames == 0 or terminated or truncated):
+    if frame_number % skip_frames == 0 or terminated or truncated:
         # need to have random sample and compare to random sample next
         random_state_sample, random_next_state_sample, random_reward_sample = random_stack_sample(frame_stack_history, batch_size-1, device)
 
