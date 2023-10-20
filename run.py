@@ -23,9 +23,9 @@ frame_count = 4 # number of frames to stack so the model can perceive movement
 discount = 0.99
 choose_random = 1.0 # epsilon
 choose_random_min = 0.0
-choose_random_decay = 0.999
+choose_random_decay = 0.995
 skip_frames = 1 # number of frames to skip between actions, 1 means every frame
-batch_size = 100
+batch_size = 1 #100
 keep_frame_stack_history = 1000 # number of frame stacks to keep in history for random sampling
 
 height, width = 210, 160
@@ -33,7 +33,8 @@ height, width = 210, 160
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 #env = gym.make("SpaceInvaders-v4", render_mode="rgb_array")
-env = gym.make("ALE/Centipede-v5", render_mode="rgb_array")
+#env = gym.make("ALE/Centipede-v5", render_mode="rgb_array")
+env = gym.make("ALE/BeamRider-v5", render_mode="rgb_array")
 
 model = SpaceInvadersModel(n_actions=env.action_space.n, frames=frame_count).to(device)
 optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
@@ -86,6 +87,7 @@ while running:
     next_state = prep_observation_for_model(observation, device)
     score += reward
     frame_skip_reward += reward
+    reward = frame_skip_reward
 
     # update model
     if not human and (frame_number % skip_frames == 0 or terminated or truncated):
@@ -116,8 +118,7 @@ while running:
         target_q_value.requires_grad_(True)
 
         loss = F.smooth_l1_loss(q_value, target_q_value)
-
-        #print(f"loss: {loss}")
+        #print(f"q_value: {q_value} target_q_value: {target_q_value} loss: {loss}")
 
         optimizer.zero_grad()
         loss.backward()
