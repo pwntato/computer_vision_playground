@@ -16,9 +16,9 @@ class ResidualBlock(nn.Module):
     def forward(self, x):
         return self.layers(x) + self.identity(x)
 
-class SpaceInvadersModel(nn.Module):
+class AtariModel(nn.Module):
   def __init__(self, n_actions=6, frames=3):
-    super(SpaceInvadersModel, self).__init__()
+    super(AtariModel, self).__init__()
 
     nfs = (frames, 8, 16, 32, 64, 128, 256, 512, 1024) # 210x160 -> 105x80 -> 53x40 -> 27x20 -> 14x10 -> 7x5 -> 4x3 -> 2x2 -> 1x1
     hidden_layers = 2

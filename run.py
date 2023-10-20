@@ -5,11 +5,10 @@ import pygame
 import torch
 import torch.nn.functional as F
 import random
-import numpy as np
 from datetime import datetime
 from collections import deque
 
-from model import SpaceInvadersModel
+from model import AtariModel
 from util import prep_observation_for_model, q_values_to_action, frames_to_tensor, random_stack_sample, get_sample_stack
 from game_util import render_frame
 
@@ -33,7 +32,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 env = gym.make("ALE/BeamRider-v5", render_mode="rgb_array")
 
-model = SpaceInvadersModel(n_actions=env.action_space.n, frames=frame_count).to(device)
+model = AtariModel(n_actions=env.action_space.n, frames=frame_count).to(device)
 optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
 
 pygame.init()
@@ -72,6 +71,7 @@ while running:
             with torch.no_grad():
                 q_values = model(frames_to_tensor(frames).unsqueeze(0).to(device))
                 action = q_values_to_action(q_values)
+                #print(f"q_values: {q_values} action: {action}")
 
     # take action in environment
     observation, reward, terminated, truncated, info = env.step(action)
