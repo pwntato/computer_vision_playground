@@ -25,7 +25,7 @@ class AtariModel(nn.Module):
     kernel_size = 3
     padding = kernel_size // 2
 
-    nfs = [frames * (2**i) for i in range(conv_layers)]
+    nfs = [frames * (stride**i) for i in range(conv_layers)]
 
     self.layers = nn.Sequential()
     for i in range(len(nfs) - 1):
