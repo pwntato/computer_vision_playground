@@ -50,7 +50,7 @@ class AtariModel(nn.Module):
   def forward(self, x):
     #print(x.shape)
     for layer in self.layers:
-        print(x.shape)
+        #print(x.shape)
         x = layer(x)
         #print(x)
     #print(x[-1])
