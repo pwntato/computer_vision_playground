@@ -20,9 +20,13 @@ class AtariModel(nn.Module):
   def __init__(self, n_actions=6, frames=3, hidden_layers=2, normalize=nn.BatchNorm2d, activate=nn.SiLU):
     super(AtariModel, self).__init__()
 
-    conv_layers = 9 # 9 conv layers at stride 2 get to 1x1
-    stride = 2
-    kernel_size = 3
+    #conv_layers = 9 # 9 conv layers at stride 2 get to 1x1
+    #stride = 2
+    #kernel_size = 3
+    conv_layers = 6 # 6 conv layers at stride 3 get to 1x1
+    stride = 3
+    kernel_size = 5
+    
     padding = kernel_size // 2
 
     nfs = [frames * (stride**i) for i in range(conv_layers)]
@@ -46,7 +50,7 @@ class AtariModel(nn.Module):
   def forward(self, x):
     #print(x.shape)
     for layer in self.layers:
-        #print(x.shape)
+        print(x.shape)
         x = layer(x)
         #print(x)
     #print(x[-1])
