@@ -30,9 +30,9 @@ height, width = 210, 160
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-env = gym.make("ALE/BeamRider-v5", render_mode="rgb_array")
+env = gym.make("ALE/Galaxian-v5", render_mode="rgb_array")
 
-model = AtariModel(n_actions=env.action_space.n, frames=frame_count).to(device)
+model = AtariModel(n_actions=env.action_space.n, frames=frame_count, hidden_layers=0).to(device)
 optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
 
 pygame.init()

@@ -17,16 +17,15 @@ class ResidualBlock(nn.Module):
         return self.layers(x) + self.identity(x)
 
 class AtariModel(nn.Module):
-  def __init__(self, n_actions=6, frames=3):
+  def __init__(self, n_actions=6, frames=3, hidden_layers=2, normalize=nn.BatchNorm2d, activate=nn.SiLU):
     super(AtariModel, self).__init__()
 
-    nfs = (frames, 8, 16, 32, 64, 128, 256, 512, 1024) # 210x160 -> 105x80 -> 53x40 -> 27x20 -> 14x10 -> 7x5 -> 4x3 -> 2x2 -> 1x1
-    hidden_layers = 2
-    normalize = nn.BatchNorm2d
-    activate = nn.SiLU
+    conv_layers = 9 # 9 conv layers at stride 2 get to 1x1
     stride = 2
     kernel_size = 3
     padding = kernel_size // 2
+
+    nfs = [frames * (2**i) for i in range(conv_layers)]
 
     self.layers = nn.Sequential()
     for i in range(len(nfs) - 1):
@@ -47,7 +46,7 @@ class AtariModel(nn.Module):
   def forward(self, x):
     #print(x.shape)
     for layer in self.layers:
-        #print(layer, x.shape)
+        #print(x.shape)
         x = layer(x)
         #print(x)
     #print(x[-1])
