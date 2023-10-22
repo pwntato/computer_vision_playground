@@ -23,7 +23,8 @@ choose_random_decay = 0.995         # how much to decay epsilon after each episo
 skip_frames = 1                     # number of frames to skip between actions, 1 means every frame
 batch_size = 50                     # number of samples to process at once
 randomize_episode_batches = True    # whether to randomize the order of samples in each episode
-loss_function = F.smooth_l1_loss
+loss_function = F.smooth_l1_loss    # loss function to use
+optimizer = torch.optim.SGD         # optimizer to use
 
 height, width = 210, 160
 view_scale = 4
@@ -33,7 +34,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 env = gym.make(game, render_mode="rgb_array")
 
 model = AtariModel(n_actions=env.action_space.n, frames=frame_count, hidden_layers=0).to(device)
-optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+optimizer = optimizer(model.parameters(), lr=learning_rate)
 
 pygame.init()
 screen = pygame.display.set_mode(((width * view_scale) + 400, height * view_scale))
