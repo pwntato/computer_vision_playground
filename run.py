@@ -25,7 +25,7 @@ batch_size = 50                     # number of samples to process at once
 randomize_episode_batches = True    # whether to randomize the order of samples in each episode
 loss_function = F.smooth_l1_loss    # loss function to use
 optimizer = torch.optim.SGD         # optimizer to use
-hidden_layers = 0                   # number of hidden linear layers in the model
+hidden_layers = 1                   # number of hidden linear layers in the model
 
 height, width = 210, 160
 view_scale = 4
