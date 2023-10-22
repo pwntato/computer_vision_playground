@@ -12,7 +12,7 @@ from model import AtariModel
 from util import prep_observation_for_model, frames_to_tensor, get_sample_stack
 from game_util import render_frame
 
-view_scale = 4
+game = "SpaceInvaders-v4" # pick from https://gymnasium.farama.org/environments/atari/complete_list/
 
 learning_rate = 1e-4
 frame_count = 4 # number of frames to stack so the model can perceive movement
@@ -26,10 +26,11 @@ randomize_episode_batches = True # whether to randomize the order of samples in 
 loss_function = F.smooth_l1_loss
 
 height, width = 210, 160
+view_scale = 4
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-env = gym.make("ALE/Galaxian-v5", render_mode="rgb_array")
+env = gym.make(game, render_mode="rgb_array")
 
 model = AtariModel(n_actions=env.action_space.n, frames=frame_count, hidden_layers=0).to(device)
 optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
