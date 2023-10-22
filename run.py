@@ -12,7 +12,7 @@ from model import AtariModel
 from util import prep_observation_for_model, frames_to_tensor, get_sample_stack
 from game_util import render_frame
 
-game = "ALE/BeamRider-v5" # pick from https://gymnasium.farama.org/environments/atari/complete_list/
+game = "ALE/Galaxian-v5" # pick from https://gymnasium.farama.org/environments/atari/complete_list/
 
 learning_rate = 1e-4                # how fast to learn
 frame_count = 4                     # number of frames to stack so the model can perceive movement
@@ -25,7 +25,7 @@ batch_size = 50                     # number of samples to process at once
 randomize_episode_batches = True    # whether to randomize the order of samples in each episode
 loss_function = F.smooth_l1_loss    # loss function to use
 optimizer = torch.optim.SGD         # optimizer to use
-hidden_layers = 1                   # number of hidden linear layers in the model
+hidden_layers = 0                   # number of hidden linear layers in the model
 
 height, width = 210, 160
 view_scale = 4
