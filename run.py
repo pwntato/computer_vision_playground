@@ -89,7 +89,9 @@ while running:
             stack, action, reward = episode[i]
             g_return = reward + discount * g_return
             returns.append((stack, action, g_return))
-            
+
+        episode = []
+
         if randomize_episode_batches:
             random.shuffle(returns)
         else:
@@ -108,8 +110,6 @@ while running:
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-
-        episode = []
 
         # Game over, reset tracking variables
         if score > high_score:
