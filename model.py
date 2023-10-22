@@ -23,6 +23,7 @@ class AtariModel(nn.Module):
     #conv_layers = 9 # 9 conv layers at stride 2 get to 1x1
     #stride = 2
     #kernel_size = 3
+
     #conv_layers = 6 # 6 conv layers at stride 3 get to 1x1
     #stride = 3
     conv_layers = 5 # 5 conv layers at stride 4 get to 1x1
@@ -50,11 +51,8 @@ class AtariModel(nn.Module):
     self.layers.append(nn.Softmax(dim=1))
 
   def forward(self, x):
-    #print(x.shape)
     for layer in self.layers:
         #print(x.shape)
         x = layer(x)
-        #print(x)
-    #print(x[-1])
     return x
   

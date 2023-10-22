@@ -69,7 +69,6 @@ while running:
                 q_values = model(frames_to_tensor(frames).unsqueeze(0).to(device))
                 action = q_values.argmax().item()
                 #action = torch.distributions.Categorical(q_values).sample().item()
-                #print(f"q_values: {q_values} action: {action}")
 
     # take action in environment
     observation, reward, terminated, truncated, _ = env.step(action)
