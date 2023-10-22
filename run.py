@@ -22,8 +22,7 @@ choose_random_min = 0.0
 choose_random_decay = 0.995
 skip_frames = 1 # number of frames to skip between actions, 1 means every frame
 batch_size = 50 # number of samples to take from history for training
-keep_frame_stack_history = 1000 # number of frame stacks to keep in history for random sampling
-
+randomize_episode_batches = True # whether to randomize the order of samples in each episode
 loss_function = F.smooth_l1_loss
 
 height, width = 210, 160
@@ -89,7 +88,10 @@ while running:
             stack, action, reward = episode[i]
             g_return = reward + discount * g_return
             returns.append((stack, action, g_return))
-        returns.reverse()
+        if randomize_episode_batches:
+            random.shuffle(returns)
+        else:
+            returns.reverse()
 
         for i in range(0, len(returns), batch_size):
             batch = returns[i:i+batch_size]
