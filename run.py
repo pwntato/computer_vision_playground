@@ -89,6 +89,7 @@ while running:
             stack, action, reward = episode[i]
             g_return = reward + discount * g_return
             returns.append((stack, action, g_return))
+            
         if randomize_episode_batches:
             random.shuffle(returns)
         else:
