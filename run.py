@@ -97,8 +97,6 @@ while running:
             action_batch = torch.tensor([x[1] for x in batch], device=device)
             g_return_batch = torch.tensor([x[2] for x in batch], device=device)
 
-            print(f"stack_batch: {stack_batch.shape} action_batch: {action_batch.shape} g_return_batch: {g_return_batch.shape}")
-
             q_values = model(stack_batch)
             q_values = q_values.gather(1, action_batch.unsqueeze(1)).squeeze(1)
 
@@ -106,6 +104,8 @@ while running:
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+
+        episode = []
 
         # Game over, reset tracking variables
         if score > high_score:
