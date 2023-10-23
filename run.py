@@ -79,6 +79,7 @@ while running:
     reward = frame_skip_reward
     episode.append((frames_to_tensor(frames), action, reward))
 
+    frames.append(state)
     state = next_state
     frame_number += 1
 
@@ -106,6 +107,8 @@ while running:
 
             q_values = model(stack_batch)
             q_values = q_values.gather(1, action_batch.unsqueeze(1)).squeeze(1)
+
+            #print(f"q_values {q_values} g_return_batch {g_return_batch}")
 
             loss = loss_function(q_values, g_return_batch)
             optimizer.zero_grad()
