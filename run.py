@@ -7,18 +7,19 @@ import torch.nn.functional as F
 import random
 from datetime import datetime
 from collections import deque
+import cv2
 
 from model import AtariModel
 from util import prep_observation_for_model, frames_to_tensor, get_sample_stack
 from game_util import render_frame
 
 # implement passing move history to model
-# add video recording
 # add model saving/loading
 
 game = "ALE/MsPacman-v5" # pick from https://gymnasium.farama.org/environments/atari/complete_list/
 
 render = True                       # whether to render the game to the screen
+record_tries = 0                    # how many tries to record
 learning_rate = 1e-4                # how fast to learn
 frame_count = 4                     # number of frames to stack so the model can perceive movement
 discount = 0.95                     # gamma, how much to discount future rewards from current actions
@@ -44,7 +45,10 @@ model = AtariModel(n_actions=env.action_space.n, frames=frame_count, hidden_laye
 optimizer = optimizer(model.parameters(), lr=learning_rate)
 
 pygame.init()
-screen = pygame.display.set_mode(((width * view_scale) + 400, height * view_scale)) if render else None
+screen_width = (width * view_scale) + 400
+screen_height = height * view_scale
+screen = pygame.display.set_mode((screen_width, screen_height)) if render else None
+video_writer = cv2.VideoWriter("atari.mp4", cv2.VideoWriter_fourcc(*'mp4v'), 150, (screen_width, screen_height)) if record_tries > 0 and render else None
 font = pygame.font.Font(pygame.font.get_default_font(), 36)
 
 frames = deque(maxlen=frame_count)
@@ -145,5 +149,17 @@ while running:
     # render frame to screen
     if render:
         running = render_frame(view_scale, choose_random, width, screen, font, observation, score, high_score, recent_scores, tries, start_time)
+
+        # record video
+        if video_writer is not None and tries <= record_tries:
+            frame = pygame.display.get_surface()
+            view = pygame.surfarray.array3d(frame)
+            view = view.transpose([1, 0, 2])
+            image = cv2.cvtColor(view, cv2.COLOR_RGB2BGR)
+            video_writer.write(image)
+
+            if tries >= record_tries:
+                video_writer.release()
+                video_writer = None
 
 env.close()
