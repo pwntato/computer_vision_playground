@@ -24,7 +24,7 @@ learning_rate = 1e-4                # how fast to learn
 frame_count = 4                     # number of frames to stack so the model can perceive movement
 discount = 0.95                     # gamma, how much to discount future rewards from current actions
 choose_random = 1.0                 # epsilon, how often to choose a random action
-choose_random_min = 0.0             # minimum epsilon
+choose_random_min = 0.01            # minimum epsilon
 choose_random_decay = 0.995         # how much to decay epsilon after each episode (multiplied, not subtracted)
 skip_frames = 1                     # number of frames to skip between actions, 1 means every frame
 batch_size = 100                    # number of samples to process at once
@@ -144,7 +144,9 @@ while running:
         for _ in range(frame_count):
             frames.append(state)
         score = 0
-        choose_random = max(choose_random_min, choose_random * choose_random_decay)
+        choose_random = choose_random * choose_random_decay
+        if choose_random <= choose_random_min:
+            choose_random = 0
 
     # render frame to screen
     if render:
