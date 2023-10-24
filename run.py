@@ -101,6 +101,13 @@ while running:
     frame_number += 1
 
     if terminated or truncated:
+        if score > high_score:
+            high_score = score
+
+            # save best model after done choosing random, BEFORE updating weights
+            if save_best_as is not None and choose_random <= choose_random_min:
+                torch.save(model.state_dict(), save_best_as)
+
         if load_model is None:
             # Adjust model weights, monte carlo style
             returns = []
@@ -134,13 +141,6 @@ while running:
                 optimizer.step()
 
         # Game over, reset tracking variables
-        if score > high_score:
-            high_score = score
-
-            # save best model after done choosing random
-            if save_best_as is not None and choose_random <= choose_random_min:
-                torch.save(model.state_dict(), save_best_as)
-    
         recent_scores.append(score)
         recent_scores = recent_scores[-100:] # keep last 100 scores
         print(f"Try {tries}: score {score} high score {high_score} rolling average {int(sum(recent_scores) / len(recent_scores))}")
