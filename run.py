@@ -12,7 +12,6 @@ from model import AtariModel
 from util import prep_observation_for_model, frames_to_tensor, get_sample_stack
 from game_util import render_frame
 
-# parameterize no score penalty
 # implement passing move history to model
 # add no render mode and parameterize
 # add video recording
@@ -32,6 +31,7 @@ randomize_episode_batches = True    # whether to randomize the order of samples 
 loss_function = F.mse_loss          # loss function to use
 optimizer = torch.optim.SGD         # optimizer to use
 hidden_layers = 1                   # number of hidden linear layers in the model
+no_score_penalty = 10                # how much to penalize for not scoring
 
 height, width = 210, 160
 view_scale = 4
@@ -82,7 +82,7 @@ while running:
     next_state = prep_observation_for_model(observation, device)
     score += reward
     if reward == 0:
-        reward = -1     # punish for not scoring
+        reward = -no_score_penalty     # punish for not scoring
     frame_skip_reward += reward
     reward = frame_skip_reward
     episode.append((frames_to_tensor(frames), action, reward))
