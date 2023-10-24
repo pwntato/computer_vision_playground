@@ -13,13 +13,13 @@ from model import AtariModel
 from util import prep_observation_for_model, frames_to_tensor, get_sample_stack
 from game_util import render_frame
 
-# implement passing move history to model
-# add model saving/loading
-
 game = "ALE/MsPacman-v5" # pick from https://gymnasium.farama.org/environments/atari/complete_list/
 
 render = True                       # whether to render the game to the screen
 record_tries = 0                    # how many tries to record
+save_best_as = "best.pt"            # where to save the best model, None to not save
+load_model = None                   # where to load a model from, None to not load
+
 learning_rate = 1e-4                # how fast to learn
 frame_count = 4                     # number of frames to stack so the model can perceive movement
 discount = 0.95                     # gamma, how much to discount future rewards from current actions
@@ -43,6 +43,11 @@ env = gym.make(game, render_mode="rgb_array")
 
 model = AtariModel(n_actions=env.action_space.n, frames=frame_count, hidden_layers=hidden_layers).to(device)
 optimizer = optimizer(model.parameters(), lr=learning_rate)
+
+if load_model is not None:
+    save_best_as = None
+    choose_random = 0
+    model.load_state_dict(torch.load(load_model))
 
 pygame.init()
 screen_width = (width * view_scale) + 400
@@ -96,40 +101,45 @@ while running:
     frame_number += 1
 
     if terminated or truncated:
-        # Adjust model weights, monte carlo style
-        returns = []
-        g_return = 0
-        for i in range(len(episode) - 1, -1, -1):
-            stack, action, reward = episode[i]
-            g_return = reward + discount * g_return
-            returns.append((stack, action, g_return))
+        if load_model is None:
+            # Adjust model weights, monte carlo style
+            returns = []
+            g_return = 0
+            for i in range(len(episode) - 1, -1, -1):
+                stack, action, reward = episode[i]
+                g_return = reward + discount * g_return
+                returns.append((stack, action, g_return))
 
-        episode = []
+            episode = []
 
-        if randomize_episode_batches:
-            random.shuffle(returns)
-        else:
-            returns.reverse()
+            if randomize_episode_batches:
+                random.shuffle(returns)
+            else:
+                returns.reverse()
 
-        for i in range(0, len(returns), batch_size):
-            batch = returns[i:i+batch_size]
-            stack_batch = torch.stack([x[0] for x in batch]).to(device)
-            action_batch = torch.tensor([x[1] for x in batch], device=device)
-            g_return_batch = torch.tensor([x[2] for x in batch], device=device)
+            for i in range(0, len(returns), batch_size):
+                batch = returns[i:i+batch_size]
+                stack_batch = torch.stack([x[0] for x in batch]).to(device)
+                action_batch = torch.tensor([x[1] for x in batch], device=device)
+                g_return_batch = torch.tensor([x[2] for x in batch], device=device)
 
-            q_values = model(stack_batch)
-            q_values = q_values.gather(1, action_batch.unsqueeze(1)).squeeze(1)
+                q_values = model(stack_batch)
+                q_values = q_values.gather(1, action_batch.unsqueeze(1)).squeeze(1)
 
-            #print(f"q_values {q_values} g_return_batch {g_return_batch}")
+                #print(f"q_values {q_values} g_return_batch {g_return_batch}")
 
-            loss = loss_function(q_values, g_return_batch)
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+                loss = loss_function(q_values, g_return_batch)
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
 
         # Game over, reset tracking variables
         if score > high_score:
             high_score = score
+
+            # save best model after done choosing random
+            if save_best_as is not None and choose_random <= choose_random_min:
+                torch.save(model.state_dict(), save_best_as)
     
         recent_scores.append(score)
         recent_scores = recent_scores[-100:] # keep last 100 scores
