@@ -31,12 +31,12 @@ def render_frame(view_scale, choose_random, width, screen, font, observation, sc
 
     recent_scores = recent_scores[-100:]
     if len(recent_scores) > 0:
-      text_surface = font.render(
-          f"Rolling average: {int(sum(recent_scores) / len(recent_scores))}", 
-          True, 
-          (255, 255, 255)
-        )
-      screen.blit(text_surface, dest=(text_offset, 300))
+        text_surface = font.render(
+            f"Rolling average: {int(sum(recent_scores) / len(recent_scores))}", 
+            True, 
+            (255, 255, 255)
+          )
+        screen.blit(text_surface, dest=(text_offset, 300))
 
     pygame.display.flip()
 
