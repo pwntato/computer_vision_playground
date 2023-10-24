@@ -13,12 +13,12 @@ from util import prep_observation_for_model, frames_to_tensor, get_sample_stack
 from game_util import render_frame
 
 # implement passing move history to model
-# add no render mode and parameterize
 # add video recording
 # add model saving/loading
 
 game = "ALE/MsPacman-v5" # pick from https://gymnasium.farama.org/environments/atari/complete_list/
 
+render = True                       # whether to render the game to the screen
 learning_rate = 1e-4                # how fast to learn
 frame_count = 4                     # number of frames to stack so the model can perceive movement
 discount = 0.95                     # gamma, how much to discount future rewards from current actions
@@ -31,7 +31,7 @@ randomize_episode_batches = True    # whether to randomize the order of samples 
 loss_function = F.mse_loss          # loss function to use
 optimizer = torch.optim.SGD         # optimizer to use
 hidden_layers = 1                   # number of hidden linear layers in the model
-no_score_penalty = 10                # how much to penalize for not scoring
+no_score_penalty = 10               # how much to penalize for not scoring
 
 height, width = 210, 160
 view_scale = 4
@@ -44,7 +44,7 @@ model = AtariModel(n_actions=env.action_space.n, frames=frame_count, hidden_laye
 optimizer = optimizer(model.parameters(), lr=learning_rate)
 
 pygame.init()
-screen = pygame.display.set_mode(((width * view_scale) + 400, height * view_scale))
+screen = pygame.display.set_mode(((width * view_scale) + 400, height * view_scale)) if render else None
 font = pygame.font.Font(pygame.font.get_default_font(), 36)
 
 frames = deque(maxlen=frame_count)
@@ -143,6 +143,7 @@ while running:
         choose_random = max(choose_random_min, choose_random * choose_random_decay)
 
     # render frame to screen
-    running = render_frame(view_scale, choose_random, width, screen, font, observation, score, high_score, recent_scores, tries, start_time)
+    if render:
+        running = render_frame(view_scale, choose_random, width, screen, font, observation, score, high_score, recent_scores, tries, start_time)
 
 env.close()
