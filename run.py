@@ -12,14 +12,20 @@ from model import AtariModel
 from util import prep_observation_for_model, frames_to_tensor, get_sample_stack
 from game_util import render_frame
 
-game = "ALE/BeamRider-v5" # pick from https://gymnasium.farama.org/environments/atari/complete_list/
+# parameterize no score penalty
+# implement passing move history to model
+# add no render mode and parameterize
+# add video recording
+# add model saving/loading
+
+game = "ALE/MsPacman-v5" # pick from https://gymnasium.farama.org/environments/atari/complete_list/
 
 learning_rate = 1e-4                # how fast to learn
 frame_count = 4                     # number of frames to stack so the model can perceive movement
 discount = 0.95                     # gamma, how much to discount future rewards from current actions
 choose_random = 1.0                 # epsilon, how often to choose a random action
 choose_random_min = 0.0             # minimum epsilon
-choose_random_decay = 0.999         # how much to decay epsilon after each episode (multiplied, not subtracted)
+choose_random_decay = 0.995         # how much to decay epsilon after each episode (multiplied, not subtracted)
 skip_frames = 1                     # number of frames to skip between actions, 1 means every frame
 batch_size = 100                    # number of samples to process at once
 randomize_episode_batches = True    # whether to randomize the order of samples in each episode
@@ -75,6 +81,8 @@ while running:
     observation, reward, terminated, truncated, _ = env.step(action)
     next_state = prep_observation_for_model(observation, device)
     score += reward
+    if reward == 0:
+        reward = -1     # punish for not scoring
     frame_skip_reward += reward
     reward = frame_skip_reward
     episode.append((frames_to_tensor(frames), action, reward))
