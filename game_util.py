@@ -35,7 +35,7 @@ def render_frame(view_scale, choose_random, width, screen, font, observation, sc
             f"Rolling average: {int(sum(recent_scores) / len(recent_scores))}", 
             True, 
             (255, 255, 255)
-          )
+        )
         screen.blit(text_surface, dest=(text_offset, 300))
 
     pygame.display.flip()
