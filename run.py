@@ -15,7 +15,7 @@ from game_util import render_frame
 
 game = "ALE/MsPacman-v5" # pick from https://gymnasium.farama.org/environments/atari/complete_list/
 
-render = True                       # whether to render the game to the screen
+render = True                       # whether to render the game to the screen, False is faster
 record_tries = 0                    # how many tries to record
 save_best_as = "best.pt"            # where to save the best model, None to not save
 load_model = None                   # where to load a model from, None to not load
@@ -32,7 +32,7 @@ randomize_episode_batches = True    # whether to randomize the order of samples 
 loss_function = F.mse_loss          # loss function to use
 optimizer = torch.optim.SGD         # optimizer to use
 hidden_layers = 1                   # number of hidden linear layers in the model
-no_score_penalty = 10               # how much to penalize for not scoring
+no_score_penalty = 1                # how much to penalize for not scoring
 
 height, width = 210, 160
 view_scale = 4
@@ -155,8 +155,9 @@ while running:
             frames.append(state)
         score = 0
         choose_random = choose_random * choose_random_decay
-        if choose_random <= choose_random_min:
+        if choose_random > 0 and choose_random <= choose_random_min:
             choose_random = 0
+            high_score = 0  # reset high score when done choosing random
 
     # render frame to screen
     if render:
