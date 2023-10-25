@@ -42,7 +42,6 @@ class AtariModel(nn.Module):
         act = activate if i < len(nfs) - 2 else None
         self.layers.append(ResidualBlock(nfs[i], nfs[i + 1], kernel_size=kernel_size, stride=stride, padding=padding, bias=True, norm=norm, activate=act))
     self.layers.append(nn.Flatten())
-    # add history of N moves
     for i in range(hidden_layers):
         self.layers.append(nn.LayerNorm(nfs[-1]))
         self.layers.append(activate())
@@ -53,8 +52,5 @@ class AtariModel(nn.Module):
     self.layers.append(nn.Softmax(dim=1))
 
   def forward(self, x):
-    for layer in self.layers:
-        #print(x.shape)
-        x = layer(x)
-    return x
+    return self.layers(x)
   
