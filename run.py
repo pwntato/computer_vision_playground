@@ -18,7 +18,7 @@ game = "ALE/MsPacman-v5" # pick from https://gymnasium.farama.org/environments/a
 render = True                       # whether to render the game to the screen, False is faster, but won't create video
 record_tries = 0                    # how many tries to record, 0 for no video which is faster
 save_best_as = "best.pt"            # where to save the best model, None to not save
-load_model = None                   # where to load a model from, None to not load, disables training
+load_model = None                   # where to load a model from, None to not load, loading disables training
 
 learning_rate = 1e-4                # how fast to learn
 frame_count = 4                     # number of frames to stack so the model can perceive movement
@@ -43,6 +43,9 @@ env = gym.make(game, render_mode="rgb_array")
 
 model = AtariModel(n_actions=env.action_space.n, frames=frame_count, hidden_layers=hidden_layers).to(device)
 optimizer = optimizer(model.parameters(), lr=learning_rate)
+
+# GPU is for machine learning, not rendering video
+cv2.ocl.setUseOpenCL(False)
 
 if load_model is not None:
     save_best_as = None
