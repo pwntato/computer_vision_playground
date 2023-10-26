@@ -44,9 +44,6 @@ env = gym.make(game, render_mode="rgb_array")
 model = AtariModel(n_actions=env.action_space.n, frames=frame_count, hidden_layers=hidden_layers).to(device)
 optimizer = optimizer(model.parameters(), lr=learning_rate)
 
-# GPU is for machine learning, not rendering video
-cv2.ocl.setUseOpenCL(False)
-
 if load_model is not None:
     save_best_as = None
     choose_random = 0
@@ -121,8 +118,6 @@ while running:
                 g_return = reward + discount * g_return
                 returns.append((stack, action, g_return))
 
-            episode = []
-
             if randomize_episode_batches:
                 random.shuffle(returns)
             else:
@@ -149,6 +144,7 @@ while running:
         print(f"Try {tries}: score {score} high score {high_score} rolling average {int(sum(recent_scores) / len(recent_scores))}")
 
         # game over, reset tracking variables
+        episode = []
         tries += 1
         frame_number = 0
         action = 0
