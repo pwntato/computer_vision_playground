@@ -53,7 +53,7 @@ pygame.init()
 screen_width = (width * view_scale) + 400
 screen_height = height * view_scale
 screen = pygame.display.set_mode((screen_width, screen_height)) if render else None
-video_writer = cv2.VideoWriter("atari.mp4", cv2.VideoWriter_fourcc(*'mp4v'), 150, (screen_width, screen_height)) if record_tries > 0 and render else None
+video_writer = cv2.VideoWriter("atari.mp4", cv2.VideoWriter_fourcc(*'mp4v'), 75, (screen_width, screen_height)) if record_tries > 0 and render else None
 font = pygame.font.Font(pygame.font.get_default_font(), 36)
 
 frames = deque(maxlen=frame_count)

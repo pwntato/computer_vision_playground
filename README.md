@@ -1,5 +1,5 @@
 # Atari Computer Vison Model Playground
-[Ms Pacman demo video](http://youtube.com) shows a trained model playing Ms Pacman.
+[Ms Pacman demo video](https://youtu.be/2jsLlFzWb2s) shows a trained model playing Ms Pacman.
 
 ### Summary
 
